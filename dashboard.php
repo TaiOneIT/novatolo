@@ -2,11 +2,14 @@
 // dashboard.php - Mobile-first NOVATOLO member dashboard
 session_start();
 require_once 'db.php';
+require_once 'withdrawal_rules.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
 }
+
+ensureWithdrawalFeeColumn($pdo);
 
 $user_id = (int) $_SESSION['user_id'];
 $message = '';
@@ -421,8 +424,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($pendingWithdrawals >= 1) {
             $error = 'You already have 1 pending withdrawal request.';
-        } elseif ($amount < 500) {
-            $error = 'Minimum withdrawal amount is 500 RWF.';
+        } elseif ($amount < MINIMUM_WITHDRAWAL_RWF || floor($amount) !== $amount) {
+            $error = 'Minimum withdrawal amount is 3,000 RWF. Enter a whole-number amount.';
         } elseif ($amount > $withdrawable) {
             $error = 'Insufficient earning balance.';
         } elseif (!preg_match('/^07\d{8}$/', preg_replace('/\s+/', '', $phone))) {
@@ -431,17 +434,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Please enter the registered name for the receiving number.';
         } else {
             $phone = preg_replace('/\s+/', '', $phone);
+            $withdrawalFee = round($amount * WITHDRAWAL_FEE_PERCENT / 100);
             try {
                 $pdo->beginTransaction();
                 $stmt = $pdo->prepare('UPDATE users SET profit_balance = profit_balance - ? WHERE id = ? AND profit_balance >= ?');
                 $stmt->execute([$amount, $user_id, $amount]);
+                if ($stmt->rowCount() !== 1) {
+                    throw new RuntimeException('Earnings balance changed before the withdrawal could be reserved.');
+                }
 
                 if ($hasRecipientNameColumn) {
-                    $stmt = $pdo->prepare("INSERT INTO transactions (user_id, type, amount, phone, recipient_name, status) VALUES (?, ?, ?, ?, ?, 'pending')");
-                    $stmt->execute([$user_id, $withdrawType, $amount, $phone, $registeredName]);
+                    $stmt = $pdo->prepare("INSERT INTO transactions (user_id, type, amount, withdrawal_fee, phone, recipient_name, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')");
+                    $stmt->execute([$user_id, $withdrawType, $amount, $withdrawalFee, $phone, $registeredName]);
                 } else {
-                    $stmt = $pdo->prepare("INSERT INTO transactions (user_id, type, amount, phone, status) VALUES (?, ?, ?, ?, 'pending')");
-                    $stmt->execute([$user_id, $withdrawType, $amount, $phone]);
+                    $stmt = $pdo->prepare("INSERT INTO transactions (user_id, type, amount, withdrawal_fee, phone, status) VALUES (?, ?, ?, ?, ?, 'pending')");
+                    $stmt->execute([$user_id, $withdrawType, $amount, $withdrawalFee, $phone]);
                 }
                 $pdo->commit();
                 header('Location: dashboard.php?tab=transactions&msg=withdraw_submitted');
@@ -463,19 +470,10 @@ if (isset($_GET['msg'])) {
     if ($_GET['msg'] === 'chat_deleted') $message = 'Message deleted successfully!';
 }
 
-$plan_images = [
-    1 => 'florian-media-dock-2898497.jpg',
-    2 => 'mahavir-shah-phone-7832257.jpg',
-    3 => '16078228-iphone-5051984.jpg',
-    4 => 'fredriktheteacher-apple-watch-4028102.jpg',
-    5 => 'doc-wood-apple-2362149_1920.jpg',
-    6 => 'stocksnap-lifestyle-2569185.jpg',
-    7 => 'pexels-apple-1853259.jpg',
-    8 => 'pexels-home-office-1867759.jpg',
-    9 => 'pexels-laptop-1842297.jpg'
-];
+$plan_images = require 'plan_images.php';
 
 $plans = $pdo->query('SELECT * FROM investment_plans ORDER BY id ASC')->fetchAll();
+$startingPlanAmount = $plans ? min(array_map(static fn($plan) => (float)$plan['min_amount'], $plans)) : null;
 
 $userInvestmentsByPlan = [];
 try {
@@ -721,7 +719,7 @@ body{padding-bottom:96px}button,input,textarea{font:inherit}button{cursor:pointe
 <!-- PLANS PAGE -->
 <section id="page-plans" class="page <?= $tab === 'plans' ? 'active' : '' ?>">
     <div class="section-head plans-heading">
-        <div><h2>Investment plans</h2><span>Browse every available plan and its terms</span></div>
+        <div><h2>Investment plans</h2><span>Plans start at <?= $startingPlanAmount !== null ? money($startingPlanAmount) : '—' ?> · review each term</span></div>
         <span class="plan-count"><?= count($plans) ?> plans</span>
     </div>
     <div class="plans-grid">
@@ -729,6 +727,7 @@ body{padding-bottom:96px}button,input,textarea{font:inherit}button{cursor:pointe
     foreach ($plans as $index => $plan): 
         $pId = (int)$plan['id'];
         $imgFile = $plan_images[$pId] ?? 'florian-media-dock-2898497.jpg';
+        $planCategory = $pId <= 8 ? 'Phones' : ($pId <= 16 ? 'Watches' : 'Computers');
         $planAmount = (float)$plan['min_amount'];
         $profitRate = (float)$plan['profit_rate'];
         $durationDays = (int)$plan['duration_days'];
@@ -744,6 +743,7 @@ body{padding-bottom:96px}button,input,textarea{font:inherit}button{cursor:pointe
             <div>
                 <div class="plan-top" style="background-image: url('<?= $imgFile ?>');">
                     <div class="plan-top-overlay"></div>
+                    <span class="plan-category"><?= e($planCategory) ?></span>
                     <span class="plan-pill"><?= e($plan['name']) ?></span>
                 </div>
                 <div class="plan-body">
@@ -836,6 +836,10 @@ body{padding-bottom:96px}button,input,textarea{font:inherit}button{cursor:pointe
                 <div class="tx-line" style="margin-top:6px;">
                     <small style="color:#64748b; font-size:8px;"><?= e($t['created_at']) ?> (<?= e($t['phone']) ?>)</small>
                     <span class="badge <?= e(strtolower($t['status'])) ?>"><?= e($t['status']) ?></span>
+                </div>
+                <div class="withdrawal-breakdown">
+                    <span>Fee: <?= money($t['withdrawal_fee']) ?></span>
+                    <strong>Estimated payout: <?= money(max(0, (float)$t['amount'] - (float)$t['withdrawal_fee'])) ?></strong>
                 </div>
             </div>
         <?php endforeach; ?>
@@ -1040,7 +1044,15 @@ body{padding-bottom:96px}button,input,textarea{font:inherit}button{cursor:pointe
         <div class="withdraw-balance"><small>WITHDRAWABLE EARNING BALANCE</small><strong><?= money($earningBalance) ?></strong></div>
         <form method="POST">
             <input type="hidden" name="action" value="withdraw">
-            <div class="field"><label>Amount (RWF)</label><input type="number" name="amount" min="500" max="<?= $earningBalance ?>" placeholder="Minimum 500 RWF" required></div>
+            <div class="withdrawal-fee-note">
+                <strong>Minimum request: <?= number_format(MINIMUM_WITHDRAWAL_RWF) ?> RWF · Fee: <?= WITHDRAWAL_FEE_PERCENT ?>%</strong>
+                <span>Fee is deducted from your request. You receive the remaining <?= 100 - WITHDRAWAL_FEE_PERCENT ?>% if approved.</span>
+            </div>
+            <div class="field"><label for="withdrawAmount">Gross amount to withdraw (RWF)</label><input type="number" id="withdrawAmount" name="amount" min="<?= MINIMUM_WITHDRAWAL_RWF ?>" max="<?= (int)$earningBalance ?>" step="1" placeholder="Minimum <?= number_format(MINIMUM_WITHDRAWAL_RWF) ?> RWF" required></div>
+            <div class="withdrawal-estimate" aria-live="polite">
+                <span><?= WITHDRAWAL_FEE_PERCENT ?>% fee <strong id="withdrawFeeEstimate">—</strong></span>
+                <span>Estimated payout <strong id="withdrawPayoutEstimate">—</strong></span>
+            </div>
             <div class="field"><label>MoMo Phone Number</label><input type="text" name="momo_phone" value="<?= e($user['phone']) ?>" required></div>
             <div class="field"><label>Registered MoMo Name</label><input type="text" name="momo_name" placeholder="Full Registered Name" required></div>
             <button type="submit" class="submit" style="background:#2563eb;">Confirm Withdrawal Request</button>
@@ -1154,6 +1166,22 @@ body{padding-bottom:96px}button,input,textarea{font:inherit}button{cursor:pointe
             alert('Code: ' + codeStr);
         });
     }
+
+    const withdrawAmountInput = document.getElementById('withdrawAmount');
+    const withdrawFeeEstimate = document.getElementById('withdrawFeeEstimate');
+    const withdrawPayoutEstimate = document.getElementById('withdrawPayoutEstimate');
+    withdrawAmountInput?.addEventListener('input', () => {
+        const grossAmount = Number(withdrawAmountInput.value);
+        if (!Number.isFinite(grossAmount) || grossAmount < <?= MINIMUM_WITHDRAWAL_RWF ?>) {
+            withdrawFeeEstimate.textContent = '—';
+            withdrawPayoutEstimate.textContent = '—';
+            return;
+        }
+        const fee = Math.round(grossAmount * <?= WITHDRAWAL_FEE_PERCENT ?> / 100);
+        const formatRwf = value => `${value.toLocaleString()} RWF`;
+        withdrawFeeEstimate.textContent = formatRwf(fee);
+        withdrawPayoutEstimate.textContent = formatRwf(grossAmount - fee);
+    });
 
     function switchTxPanel(type){
         document.querySelectorAll('.tx-panel').forEach(p => p.classList.remove('active'));

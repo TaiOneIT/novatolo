@@ -2,6 +2,7 @@
 // about.php
 session_start();
 require_once 'db.php';
+require_once 'withdrawal_rules.php';
 
 // Maintain Referral Persistence
 if (!empty($_GET['ref'])) {
@@ -13,6 +14,10 @@ if (!empty($_GET['ref'])) {
 
 $ref_code_param = $_SESSION['ref_code'] ?? '';
 $ref_query = !empty($ref_code_param) ? '?ref=' . rawurlencode($ref_code_param) : '';
+$planOverview = $pdo->query('SELECT COUNT(*) AS plan_count, MIN(min_amount) AS starting_amount, MIN(duration_days) AS shortest_duration, MAX(duration_days) AS longest_duration, MIN(profit_rate) AS lowest_rate, MAX(profit_rate) AS highest_rate FROM investment_plans')->fetch();
+$exampleWithdrawal = MINIMUM_WITHDRAWAL_RWF;
+$exampleWithdrawalFee = round($exampleWithdrawal * WITHDRAWAL_FEE_PERCENT / 100);
+$exampleWithdrawalPayout = $exampleWithdrawal - $exampleWithdrawalFee;
 
 $user = null;
 if (isset($_SESSION['user_id'])) {
@@ -158,59 +163,83 @@ if (isset($_SESSION['user_id'])) {
 </head>
 <body>
 
-<header class="navbar">
-    <a href="index.php<?= $ref_query ?>" class="brand-logo">
-        <div class="logo-icon"><img src="brand-icon.svg" alt="" width="22" height="22"></div>
-        <span class="brand-name">NOVATOLO</span>
-    </a>
-
-    <div class="nav-center-menu">
-        <a href="index.php<?= $ref_query ?>" class="nav-link"><i data-lucide="layers" size="13"></i> <span>Plans</span></a>
-        <a href="about.php<?= $ref_query ?>" class="nav-link active"><i data-lucide="info" size="13"></i> <span>About</span></a>
-    </div>
-
-    <div class="nav-right-auth">
-        <a href="login.php<?= $ref_query ?>" class="btn-auth-login"><i data-lucide="log-in" size="13"></i> Sign In</a>
-        <a href="register.php<?= $ref_query ?>" class="btn-auth-signup"><i data-lucide="user-plus" size="13"></i> Sign Up</a>
+<header class="site-header">
+    <div class="site-utility"><span>Investment plans & account services</span><span>Plan details are estimates; outcomes are not guaranteed.</span></div>
+    <div class="site-header-inner">
+        <a href="index.php<?= $ref_query ?>" class="brand-logo">
+            <span class="logo-icon"><img src="brand-icon.svg" alt="" width="22" height="22"></span>
+            <span class="brand-lockup"><span class="brand-name">NOVATOLO</span><span class="brand-caption">MEMBER SERVICES</span></span>
+        </a>
+        <button class="public-menu-toggle" type="button" data-public-nav-toggle aria-controls="public-navigation" aria-expanded="false">
+            <i data-lucide="menu" size="20"></i><span>Menu</span>
+        </button>
+        <nav class="public-navigation" id="public-navigation">
+            <div class="nav-center-menu">
+                <a href="index.php<?= $ref_query ?>" class="nav-link"><i data-lucide="layers" size="15"></i><span>Plans</span></a>
+                <a href="about.php<?= $ref_query ?>" class="nav-link active"><i data-lucide="info" size="15"></i><span>About</span></a>
+            </div>
+            <div class="nav-right-auth">
+                <button type="button" class="btn-auth-login app-install" data-install-app><i data-lucide="download" size="15"></i>Install app</button>
+                <a href="login.php<?= $ref_query ?>" class="btn-auth-login"><i data-lucide="log-in" size="15"></i>Sign in</a>
+                <a href="register.php<?= $ref_query ?>" class="btn-auth-signup"><i data-lucide="user-plus" size="15"></i>Create account</a>
+            </div>
+        </nav>
     </div>
 </header>
 
 <div class="container about-container">
     <section class="about-card">
         <div class="about-intro">
-            <span class="about-eyebrow">A clearer view of your account</span>
-            <h1>Tools to understand your investment activity.</h1>
-            <p>NOVATOLO brings plan information, account activity and member support together in one place. Review the terms shown for each plan before deciding whether it is right for you.</p>
+            <span class="about-eyebrow">NOVATOLO · Platform overview</span>
+            <h1>Understand the terms before you invest.</h1>
+            <p>NOVATOLO provides a catalog of fixed-term investment plans and member tools for reviewing balances, transactions, investment status and support requests. The plan figures below come from the published plan table.</p>
+        </div>
+
+        <div class="about-stats" aria-label="Current plan overview">
+            <div><strong><?= (int)$planOverview['plan_count'] ?></strong><span>available plans</span></div>
+            <div><strong><?= number_format((float)$planOverview['starting_amount'], 0) ?> RWF</strong><span>lowest entry amount</span></div>
+            <div><strong><?= number_format((float)$planOverview['lowest_rate'], 0) ?>–<?= number_format((float)$planOverview['highest_rate'], 0) ?>%</strong><span>published plan rates</span></div>
+            <div><strong><?= (int)$planOverview['shortest_duration'] ?>–<?= (int)$planOverview['longest_duration'] ?> days</strong><span>plan durations</span></div>
         </div>
 
         <div class="about-details">
             <div class="about-detail">
                 <span class="about-detail-number">01</span>
                 <div>
-                    <h2>Review the terms</h2>
-                    <p>Every plan lists its rate, duration, investment amount and estimated return. Read those details carefully; displayed estimates are not guaranteed results.</p>
+                    <h2>How plan estimates work</h2>
+                    <p>Each tier lists an investment amount, a profit rate and a duration. The platform estimates total profit as the invested amount multiplied by the listed rate; the daily figure divides that estimate across the plan duration. These are projections, not promises or guaranteed returns.</p>
                 </div>
             </div>
             <div class="about-detail">
                 <span class="about-detail-number">02</span>
                 <div>
-                    <h2>Follow account activity</h2>
-                    <p>Members can review balances, submitted transactions and investment status from their dashboard as account activity is recorded.</p>
+                    <h2>Track your account</h2>
+                    <p>The member dashboard displays deposit and earnings balances, submitted transactions and the status of investments. Check the plan terms and your account status rather than relying only on a displayed estimate.</p>
                 </div>
             </div>
             <div class="about-detail">
                 <span class="about-detail-number">03</span>
                 <div>
-                    <h2>Get in touch</h2>
-                    <p>Use the support channel below for account or payment questions. Referral rewards, when applicable, depend on qualifying activity and the terms shown in your account.</p>
+                    <h2>Withdrawals and fees</h2>
+                    <p>Withdrawals are requested from the earnings balance. The minimum request is <?= number_format(MINIMUM_WITHDRAWAL_RWF) ?> RWF. A <?= WITHDRAWAL_FEE_PERCENT ?>% fee is deducted from the requested amount; the remaining <?= 100 - WITHDRAWAL_FEE_PERCENT ?>% is the estimated payout. For example, a <?= number_format($exampleWithdrawal) ?> RWF request has a <?= number_format($exampleWithdrawalFee) ?> RWF fee and a <?= number_format($exampleWithdrawalPayout) ?> RWF payout.</p>
                 </div>
             </div>
         </div>
 
         <aside class="about-notice">
             <i data-lucide="circle-alert" size="20"></i>
-            <p><strong>Please consider the risks.</strong> Investment values and returns can vary. Review all plan terms and only make decisions you understand.</p>
+            <p><strong>Investment risk matters.</strong> The rates shown are unusually high compared with many conventional investments and are not independently verified or guaranteed. You could lose some or all of the money you invest. Do not invest money you cannot afford to lose, and independently verify the operator, payment instructions and applicable protections before sending funds.</p>
         </aside>
+
+        <section class="about-steps">
+            <h2>Before placing a plan</h2>
+            <ol>
+                <li>Compare the minimum investment, published rate and duration for the specific tier.</li>
+                <li>Read the estimated return as a projection only; actual outcomes may differ.</li>
+                <li>Confirm you have sufficient cleared balance and understand how the funds will be used.</li>
+                <li>Keep transaction records and contact support if an account entry looks incorrect.</li>
+            </ol>
+        </section>
 
         <div class="about-support">
             <div>

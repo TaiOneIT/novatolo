@@ -25,21 +25,11 @@ function e($value): string {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
-// Map images to 9 plans: 1-3 Phones, 4-6 Watches, 7-9 Laptops
-$plan_images = [
-    1 => 'florian-media-dock-2898497.jpg',
-    2 => 'mahavir-shah-phone-7832257.jpg',
-    3 => '16078228-iphone-5051984.jpg',
-    4 => 'fredriktheteacher-apple-watch-4028102.jpg',
-    5 => 'doc-wood-apple-2362149_1920.jpg',
-    6 => 'stocksnap-lifestyle-2569185.jpg',
-    7 => 'pexels-apple-1853259.jpg',
-    8 => 'pexels-home-office-1867759.jpg',
-    9 => 'pexels-laptop-1842297.jpg'
-];
+$plan_images = require 'plan_images.php';
 
 // Read every configured plan without changing database records on page load.
 $plans = $pdo->query('SELECT * FROM investment_plans ORDER BY id ASC')->fetchAll();
+$startingPlanAmount = $plans ? min(array_map(static fn($plan) => (float)$plan['min_amount'], $plans)) : null;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -223,21 +213,27 @@ $plans = $pdo->query('SELECT * FROM investment_plans ORDER BY id ASC')->fetchAll
 </head>
 <body>
 
-<header class="navbar">
-    <a href="index.php<?= $ref_query ?>" class="brand-logo">
-        <div class="logo-icon"><img src="brand-icon.svg" alt="" width="22" height="22"></div>
-        <span class="brand-name">NOVATOLO</span>
-    </a>
-
-    <div class="nav-center-menu">
-        <a href="index.php<?= $ref_query ?>" class="nav-link active"><i data-lucide="layers" size="13"></i> <span>Plans</span></a>
-        <a href="about.php<?= $ref_query ?>" class="nav-link"><i data-lucide="info" size="13"></i> <span>About</span></a>
-    </div>
-
-    <div class="nav-right-auth">
-        <button type="button" class="btn-auth-login app-install" data-install-app><i data-lucide="download" size="13"></i> Install app</button>
-        <a href="login.php<?= $ref_query ?>" class="btn-auth-login"><i data-lucide="log-in" size="13"></i> Sign In</a>
-        <a href="register.php<?= $ref_query ?>" class="btn-auth-signup"><i data-lucide="user-plus" size="13"></i> Sign Up</a>
+<header class="site-header">
+    <div class="site-utility"><span>Investment plans & account services</span><span>Plan details are estimates; outcomes are not guaranteed.</span></div>
+    <div class="site-header-inner">
+        <a href="index.php<?= $ref_query ?>" class="brand-logo">
+            <span class="logo-icon"><img src="brand-icon.svg" alt="" width="22" height="22"></span>
+            <span class="brand-lockup"><span class="brand-name">NOVATOLO</span><span class="brand-caption">MEMBER SERVICES</span></span>
+        </a>
+        <button class="public-menu-toggle" type="button" data-public-nav-toggle aria-controls="public-navigation" aria-expanded="false">
+            <i data-lucide="menu" size="20"></i><span>Menu</span>
+        </button>
+        <nav class="public-navigation" id="public-navigation">
+            <div class="nav-center-menu">
+                <a href="index.php<?= $ref_query ?>" class="nav-link active"><i data-lucide="layers" size="15"></i><span>Plans</span></a>
+                <a href="about.php<?= $ref_query ?>" class="nav-link"><i data-lucide="info" size="15"></i><span>About</span></a>
+            </div>
+            <div class="nav-right-auth">
+                <button type="button" class="btn-auth-login app-install" data-install-app><i data-lucide="download" size="15"></i>Install app</button>
+                <a href="login.php<?= $ref_query ?>" class="btn-auth-login"><i data-lucide="log-in" size="15"></i>Sign in</a>
+                <a href="register.php<?= $ref_query ?>" class="btn-auth-signup"><i data-lucide="user-plus" size="15"></i>Create account</a>
+            </div>
+        </nav>
     </div>
 </header>
 
@@ -245,7 +241,8 @@ $plans = $pdo->query('SELECT * FROM investment_plans ORDER BY id ASC')->fetchAll
     <div class="hero-banner">
         <p class="hero-kicker">NOVATOLO · INVESTMENT ACCOUNT</p>
         <h1>Make your next financial decision with clarity.</h1>
-        <p>Review available plans, understand their terms, and manage your account in one place.</p>
+        <p>Compare the published tiers, review their terms, and find the starting investment amount before you open an account.</p>
+        <?php if ($startingPlanAmount !== null): ?><span class="hero-starting">Plans starting at <?= money($startingPlanAmount) ?></span><?php endif; ?>
         <a class="hero-action" href="register.php<?= $ref_query ?>">Open an account <i data-lucide="arrow-up-right" size="16"></i></a>
     </div>
 
@@ -260,6 +257,7 @@ $plans = $pdo->query('SELECT * FROM investment_plans ORDER BY id ASC')->fetchAll
         foreach ($plans as $plan): 
             $pId = (int)$plan['id'];
             $imgFile = $plan_images[$pId] ?? 'florian-media-dock-2898497.jpg';
+            $planCategory = $pId <= 8 ? 'Phones' : ($pId <= 16 ? 'Watches' : 'Computers');
             $planAmount = (float)$plan['min_amount'];
             $profitRate = (float)$plan['profit_rate'];
             $durationDays = (int)$plan['duration_days'];
@@ -271,6 +269,7 @@ $plans = $pdo->query('SELECT * FROM investment_plans ORDER BY id ASC')->fetchAll
                 <div>
                     <div class="plan-top" style="background-image: url('<?= $imgFile ?>');">
                         <div class="plan-top-overlay"></div>
+                        <span class="plan-category"><?= e($planCategory) ?></span>
                         <span class="plan-pill"><?= e($plan['name']) ?></span>
                     </div>
                     <div class="plan-body">
@@ -359,5 +358,6 @@ $plans = $pdo->query('SELECT * FROM investment_plans ORDER BY id ASC')->fetchAll
         document.getElementById('authModal').classList.remove('active');
     }
 </script>
+<script src="install.js" defer></script>
 </body>
 </html>

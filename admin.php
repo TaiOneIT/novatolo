@@ -2,11 +2,14 @@
 // admin.php
 session_start();
 require_once 'db.php';
+require_once 'withdrawal_rules.php';
 
 if (!isset($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
     header("Location: login.php");
     exit;
 }
+
+ensureWithdrawalFeeColumn($pdo);
 
 $message = '';
 $current_sec = $_GET['sec'] ?? 'secDep';
@@ -656,7 +659,7 @@ if ($activeChatUser > 0) {
                     <thead>
                         <tr>
                             <th><input type="checkbox" onclick="selectAll(this, 'tblWith')"></th>
-                            <th>User Name</th><th>Phone</th><th>Recipient Name</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th>
+                            <th>User Name</th><th>Phone</th><th>Recipient Name</th><th>Gross request</th><th>Fee</th><th>Net payout</th><th>Status</th><th>Date</th><th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -666,7 +669,9 @@ if ($activeChatUser > 0) {
                                 <td><strong><?= htmlspecialchars($w['full_name']) ?></strong></td>
                                 <td><?= htmlspecialchars($w['phone'] ?? $w['u_phone']) ?></td>
                                 <td><?= htmlspecialchars($w['recipient_name'] ?? "") ?></td>
-                                <td style="color:#DC2626; font-weight:700;"><?= number_format($w['amount']) ?> RWF</td>
+                                <td style="color:#DC2626; font-weight:700;"><?= number_format((float)$w['amount']) ?> RWF</td>
+                                <td><?= number_format((float)$w['withdrawal_fee']) ?> RWF</td>
+                                <td style="color:#175766; font-weight:700;"><?= number_format(max(0, (float)$w['amount'] - (float)$w['withdrawal_fee'])) ?> RWF</td>
                                 <td><?= strtoupper($w['status']) ?></td>
                                 <td><?= $w['created_at'] ?></td>
                                 <td>

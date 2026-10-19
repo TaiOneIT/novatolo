@@ -145,6 +145,7 @@ $ref_query = !empty($ref_code_param) ? '?ref=' . rawurlencode($ref_code_param) :
             <a href="register.php<?= $ref_query ?>" class="toggle-tab active"><i data-lucide="user-plus" size="14"></i> KWIYANDIKISHA</a>
             <a href="login.php<?= $ref_query ?>" class="toggle-tab"><i data-lucide="log-in" size="14"></i> KWINJIRA</a>
         </div>
+        <button type="button" class="install-app-link app-install" data-install-app><i data-lucide="download" size="16"></i> Install NOVATOLO on this device</button>
 
         <!-- NOVATOLO LTD Logo Header -->
         <div class="card-brand-header">
