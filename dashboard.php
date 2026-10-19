@@ -475,10 +475,7 @@ $plan_images = [
     9 => 'pexels-laptop-1842297.jpg'
 ];
 
-$plans = [];
-try {
-    $plans = $pdo->query('SELECT * FROM investment_plans ORDER BY id ASC LIMIT 9')->fetchAll();
-} catch (Throwable $e) { $plans = []; }
+$plans = $pdo->query('SELECT * FROM investment_plans ORDER BY id ASC')->fetchAll();
 
 $userInvestmentsByPlan = [];
 try {
@@ -723,6 +720,10 @@ body{padding-bottom:96px}button,input,textarea{font:inherit}button{cursor:pointe
 
 <!-- PLANS PAGE -->
 <section id="page-plans" class="page <?= $tab === 'plans' ? 'active' : '' ?>">
+    <div class="section-head plans-heading">
+        <div><h2>Investment plans</h2><span>Browse every available plan and its terms</span></div>
+        <span class="plan-count"><?= count($plans) ?> plans</span>
+    </div>
     <div class="plans-grid">
     <?php 
     foreach ($plans as $index => $plan): 

@@ -175,36 +175,59 @@ if (isset($_SESSION['user_id'])) {
     </div>
 </header>
 
-<div class="container">
-    <div class="about-card">
-        <h1>About NOVATOLO</h1>
-        <p>NOVATOLO provides account tools for reviewing investment plans, tracking account activity, and contacting support. Plan terms and account activity are shown in the platform for members to review.</p>
-
-        <div class="feature-box">
-            <h4><i data-lucide="shield-check" color="#10B981" size="18"></i> How Plans Work & Yield Interest</h4>
-            <p style="margin:0; font-size:12px;">Each plan shows its rate, term, minimum amount, and estimated return. Once an investment is active, its status and maturity are tracked in your account. Displayed estimates are not a guarantee of future results.</p>
+<div class="container about-container">
+    <section class="about-card">
+        <div class="about-intro">
+            <span class="about-eyebrow">A clearer view of your account</span>
+            <h1>Tools to understand your investment activity.</h1>
+            <p>NOVATOLO brings plan information, account activity and member support together in one place. Review the terms shown for each plan before deciding whether it is right for you.</p>
         </div>
 
-        <div class="feature-box">
-            <h4><i data-lucide="gift" color="#F59E0B" size="18"></i> Referral Income</h4>
-            <p style="margin:0; font-size:12px;">Referral rewards may be available when an invited member makes qualifying approved deposits. Check your account for the current reward status and applicable terms.</p>
+        <div class="about-details">
+            <div class="about-detail">
+                <span class="about-detail-number">01</span>
+                <div>
+                    <h2>Review the terms</h2>
+                    <p>Every plan lists its rate, duration, investment amount and estimated return. Read those details carefully; displayed estimates are not guaranteed results.</p>
+                </div>
+            </div>
+            <div class="about-detail">
+                <span class="about-detail-number">02</span>
+                <div>
+                    <h2>Follow account activity</h2>
+                    <p>Members can review balances, submitted transactions and investment status from their dashboard as account activity is recorded.</p>
+                </div>
+            </div>
+            <div class="about-detail">
+                <span class="about-detail-number">03</span>
+                <div>
+                    <h2>Get in touch</h2>
+                    <p>Use the support channel below for account or payment questions. Referral rewards, when applicable, depend on qualifying activity and the terms shown in your account.</p>
+                </div>
+            </div>
         </div>
 
-        <div style="margin-top:20px;">
-            <h3 style="font-size:15px; font-weight:800; margin-bottom:6px;">Have Questions or Need Payment Support?</h3>
-            <p style="font-size:12px;">Reach our official support team directly on WhatsApp for immediate assistance.</p>
-            
+        <aside class="about-notice">
+            <i data-lucide="circle-alert" size="20"></i>
+            <p><strong>Please consider the risks.</strong> Investment values and returns can vary. Review all plan terms and only make decisions you understand.</p>
+        </aside>
+
+        <div class="about-support">
+            <div>
+                <span class="about-eyebrow">Need assistance?</span>
+                <h2>Talk with our support team.</h2>
+                <p>For account and payment questions, reach out on WhatsApp.</p>
+            </div>
             <div class="btn-group-responsive">
-                <a href="https://wa.me/447456004195?text=hello" target="_blank" class="btn-wa">
-                    <i data-lucide="message-circle" size="18"></i> Text Us on WhatsApp
+                <a href="https://wa.me/447456004195?text=hello" target="_blank" rel="noopener noreferrer" class="btn-wa">
+                    <i data-lucide="message-circle" size="18"></i> Contact support
                 </a>
-
                 <a href="index.php<?= $ref_query ?>" class="btn-new-inv">
-                    <i data-lucide="plus-circle" size="18"></i> New Investment
+                    <i data-lucide="arrow-up-right" size="18"></i> Browse plans
                 </a>
             </div>
         </div>
-    </div>
+    </section>
 </div>
 
 <footer>

@@ -38,13 +38,8 @@ $plan_images = [
     9 => 'pexels-laptop-1842297.jpg'
 ];
 
-// Read the configured plans without changing database records on page load.
-$plans = [];
-try {
-    $plans = $pdo->query('SELECT * FROM investment_plans ORDER BY id ASC LIMIT 9')->fetchAll();
-} catch (Throwable $e) {
-    $plans = [];
-}
+// Read every configured plan without changing database records on page load.
+$plans = $pdo->query('SELECT * FROM investment_plans ORDER BY id ASC')->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -255,7 +250,9 @@ try {
     </div>
 
     <div class="section-title">
-        <i data-lucide="chart-no-axes-combined" size="18" color="#176b5d"></i> Available investment plans
+        <i data-lucide="chart-no-axes-combined" size="18" color="#176b5d"></i>
+        <span>Available investment plans</span>
+        <span class="plan-count"><?= count($plans) ?> plans</span>
     </div>
 
     <div class="plans-grid">
