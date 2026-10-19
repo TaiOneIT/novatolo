@@ -1,0 +1,3 @@
+AddType audio/webm .webm
+AddType audio/ogg .ogg
+AddType audio/mp4 .m4a

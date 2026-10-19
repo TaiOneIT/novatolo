@@ -1,0 +1,4 @@
+<FilesMatch "\.(jpg|jpeg|png|gif|webp|mp3|wav|ogg|webm|m4a)$">
+    Allow from all
+    Satisfy Any
+</FilesMatch>
