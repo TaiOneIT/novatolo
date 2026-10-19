@@ -386,6 +386,9 @@ $investmentsArchived = $pdo->query("SELECT i.*, u.full_name, p.name as plan_name
 $usersArchived = $pdo->query("SELECT * FROM users WHERE is_admin = 0 AND COALESCE(is_archived,0) = 1 ORDER BY created_at DESC")->fetchAll();
 
 $activeUsersCount = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM investments WHERE LOWER(status) = 'active' AND COALESCE(is_archived,0) = 0")->fetchColumn();
+$pendingDepositsCount = (int)$pdo->query("SELECT COUNT(*) FROM transactions WHERE type = 'deposit' AND status = 'pending' AND COALESCE(is_archived,0) = 0")->fetchColumn();
+$pendingWithdrawalsCount = (int)$pdo->query("SELECT COUNT(*) FROM transactions WHERE LOWER(type) IN ('withdraw','withdrawal') AND status = 'pending' AND COALESCE(is_archived,0) = 0")->fetchColumn();
+$activeInvestmentCount = (int)$pdo->query("SELECT COUNT(*) FROM investments WHERE LOWER(status) = 'active' AND COALESCE(is_archived,0) = 0")->fetchColumn();
 
 // Count total unread user messages for Admin notification indicator
 $unreadUserMsgs = (int)$pdo->query("SELECT COUNT(*) FROM support_messages WHERE sender_type = 'user' AND is_read = 0")->fetchColumn();
@@ -425,9 +428,12 @@ if ($activeChatUser > 0) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Admin Dashboard - NOVATOLO</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#173c38">
+    <title>Operations | NOVATOLO</title>
+    <link rel="icon" href="brand-icon.svg" type="image/svg+xml">
+    <link rel="manifest" href="site.webmanifest">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
@@ -514,24 +520,35 @@ if ($activeChatUser > 0) {
             .chat-threads { border-right: none; border-bottom: 1px solid #DBEAFE; padding-bottom: 12px; margin-bottom: 12px; }
         }
     </style>
+    <link rel="stylesheet" href="brand.css">
 </head>
 <body>
 
-<div class="navbar">
-    <div class="brand">🛡️ NOVATOLO <span>Admin Control Center</span></div>
-    <a href="login.php" class="btn-act btn-red">Logout</a>
+<div class="navbar admin-navbar">
+    <div class="brand"><span class="admin-brand-mark"><img src="brand-icon.svg" alt="" width="28" height="28"></span>NOVATOLO <span>Operations</span></div>
+    <div style="display:flex; align-items:center; gap:8px;">
+        <button type="button" class="btn-act btn-blue app-install" data-install-app title="Install NOVATOLO"><i data-lucide="download" size="14"></i></button>
+        <a href="logout.php" class="btn-act btn-red">Logout</a>
+    </div>
 </div>
 
 <div class="container">
     <?php if ($message): ?><div style="padding:10px; background:#EFF6FF; border:1px solid #93C5FD; color:#1E40AF; border-radius:8px; margin-bottom:14px; text-align:center; font-size:12px; font-weight:700;"><?= htmlspecialchars($message) ?></div><?php endif; ?>
 
+    <div class="admin-overview">
+        <div><span>Pending deposits</span><strong><?= number_format($pendingDepositsCount) ?></strong></div>
+        <div><span>Pending withdrawals</span><strong><?= number_format($pendingWithdrawalsCount) ?></strong></div>
+        <div><span>Active investments</span><strong><?= number_format($activeInvestmentCount) ?></strong></div>
+        <div><span>Active investors</span><strong><?= number_format((int)$activeUsersCount) ?></strong></div>
+    </div>
+
     <div class="admin-nav">
-        <button class="admin-nav-btn" id="tab_secDep" onclick="showSection('secDep', this)">📥 Deposits</button>
-        <button class="admin-nav-btn" id="tab_secWith" onclick="showSection('secWith', this)">📤 Withdrawals</button>
-        <button class="admin-nav-btn" id="tab_secInv" onclick="showSection('secInv', this)">🚀 Active Investments</button>
-        <button class="admin-nav-btn" id="tab_secUsers" onclick="showSection('secUsers', this)">👥 Registered Users</button>
+        <button class="admin-nav-btn" id="tab_secDep" onclick="showSection('secDep', this)"><i data-lucide="arrow-down-to-line" size="14"></i> Deposits</button>
+        <button class="admin-nav-btn" id="tab_secWith" onclick="showSection('secWith', this)"><i data-lucide="arrow-up-from-line" size="14"></i> Withdrawals</button>
+        <button class="admin-nav-btn" id="tab_secInv" onclick="showSection('secInv', this)"><i data-lucide="chart-no-axes-combined" size="14"></i> Investments</button>
+        <button class="admin-nav-btn" id="tab_secUsers" onclick="showSection('secUsers', this)"><i data-lucide="users" size="14"></i> Registered Users</button>
         <button class="admin-nav-btn chat-tab-highlight" id="tab_secChat" onclick="showSection('secChat', this)">
-            💬 SUPPORT CHAT
+            <i data-lucide="messages-square" size="14"></i> Support
             <?php if ($unreadUserMsgs > 0): ?><span class="admin-chat-badge"><?= $unreadUserMsgs ?></span><?php endif; ?>
         </button>
     </div>
@@ -1255,5 +1272,6 @@ if ($activeChatUser > 0) {
         if (chatHist) chatHist.scrollTop = chatHist.scrollHeight;
     });
 </script>
+<script src="install.js" defer></script>
 </body>
 </html>

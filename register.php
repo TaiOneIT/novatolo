@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($stmt->execute([$full_name, $phone, $hashed_password, $inviter_id])) {
                 unset($_SESSION['ref_code']);
                 setcookie('ref_code', '', time() - 3600, "/");
-                header("Location: login.php?registered=1&phone=" . urlencode($phone) . "&pass=" . urlencode($password));
+                header("Location: login.php?registered=1&phone=" . urlencode($phone));
                 exit;
             } else {
                 $error = "Kwiyandikisha ntibyakunze. Ongeera ugerageze.";
@@ -53,8 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? "https" : "http";
-$site_url = $protocol . "://" . $_SERVER['HTTP_HOST'];
-$logo_url = $site_url . "/logo.php";
+$site_path = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+$site_url = rtrim($protocol . "://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $site_path, '/');
+$logo_url = $site_url . '/logo.jpg';
 
 $ref_query = !empty($ref_code_param) ? '?ref=' . rawurlencode($ref_code_param) : '';
 ?>
@@ -62,15 +63,25 @@ $ref_query = !empty($ref_code_param) ? '?ref=' . rawurlencode($ref_code_param) :
 <html lang="rw">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kwiyandikisha - NOVATOLO LTD</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#173c38">
+    <title>Create account | NOVATOLO</title>
+    <link rel="icon" href="brand-icon.svg" type="image/svg+xml">
+    <link rel="manifest" href="site.webmanifest">
     
-    <meta property="og:title" content="NOVATOLO - Digital Platform">
-    <meta property="og:description" content="Kwiyandikisha kuri NOVATOLO uze utangire kwakira inyungu ku buryo bwizewe.">
+    <meta property="og:site_name" content="NOVATOLO">
+    <meta property="og:title" content="NOVATOLO | Investment Account">
+    <meta property="og:description" content="Review NOVATOLO's investment plans, terms, and account services before joining.">
+    <meta property="og:url" content="<?= htmlspecialchars($site_url . '/register.php' . $ref_query, ENT_QUOTES, 'UTF-8') ?>">
     <meta property="og:image" content="<?= $logo_url ?>">
+    <meta property="og:image:alt" content="NOVATOLO Digital Platform">
     <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="NOVATOLO | Investment Account">
+    <meta name="twitter:description" content="Review investment plans, terms, and account services before joining.">
+    <meta name="twitter:image" content="<?= htmlspecialchars($logo_url, ENT_QUOTES, 'UTF-8') ?>">
 
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -113,12 +124,13 @@ $ref_query = !empty($ref_code_param) ? '?ref=' . rawurlencode($ref_code_param) :
         .btn-submit { width: 100%; padding: 14px; background: linear-gradient(135deg, #2563EB, #1D4ED8); border: none; border-radius: 10px; color: #FFFFFF; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 6px; box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25); }
         .alert-error { background-color: #FEF2F2; border: 1px solid #FECDD3; color: #B91C1C; font-size: 12px; padding: 12px; border-radius: 10px; margin-bottom: 16px; text-align: center; font-weight: 700; }
     </style>
+    <link rel="stylesheet" href="brand.css">
 </head>
 <body>
 
 <header class="navbar">
     <a href="index.php<?= $ref_query ?>" class="brand-logo">
-        <div class="logo-icon"><i data-lucide="trending-up" size="18"></i></div>
+        <div class="logo-icon"><img src="brand-icon.svg" alt="" width="26" height="26"></div>
         <span>NOVATOLO</span>
     </a>
     <a href="index.php<?= $ref_query ?>" class="btn-more-info">
@@ -137,7 +149,7 @@ $ref_query = !empty($ref_code_param) ? '?ref=' . rawurlencode($ref_code_param) :
         <!-- NOVATOLO LTD Logo Header -->
         <div class="card-brand-header">
             <div class="logo-icon" style="width: 48px; height: 48px; border-radius: 14px;">
-                <i data-lucide="trending-up" size="26"></i>
+                <img src="brand-icon.svg" alt="" width="34" height="34">
             </div>
             <span style="font-size: 22px; font-weight: 800; margin-top: 6px;">NOVATOLO LTD</span>
             <span class="brand-subtitle">Digital Growth Platform</span>
@@ -166,7 +178,7 @@ $ref_query = !empty($ref_code_param) ? '?ref=' . rawurlencode($ref_code_param) :
             <div class="form-group">
                 <label for="password">Ijambo ry'Ibanga (Password)</label>
                 <div class="password-wrapper">
-                    <input type="text" id="registerPasswordInput" name="password" placeholder="injiza ijambo ry'ibanga" required>
+                    <input type="password" id="registerPasswordInput" name="password" autocomplete="new-password" placeholder="injiza ijambo ry'ibanga" required>
                     <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('registerPasswordInput', this)">
                         <i data-lucide="eye" size="18"></i>
                     </button>
@@ -193,5 +205,6 @@ $ref_query = !empty($ref_code_param) ? '?ref=' . rawurlencode($ref_code_param) :
         lucide.createIcons();
     }
 </script>
+<script src="install.js" defer></script>
 </body>
 </html>

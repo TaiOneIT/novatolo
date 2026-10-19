@@ -13,6 +13,9 @@ if (!empty($_GET['ref'])) {
 
 $ref_code_param = $_SESSION['ref_code'] ?? '';
 $ref_query = !empty($ref_code_param) ? '?ref=' . rawurlencode($ref_code_param) : '';
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$site_path = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+$site_url = rtrim($protocol . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . $site_path, '/');
 
 function money($amount): string {
     return number_format((float)$amount, 0) . ' RWF';
@@ -35,31 +38,9 @@ $plan_images = [
     9 => 'pexels-laptop-1842297.jpg'
 ];
 
-// Sync & Fetch Exact 9 Database Plans
+// Read the configured plans without changing database records on page load.
 $plans = [];
 try {
-    $default_plans = [
-        ['id' => 1, 'name' => 'Starter Plan',  'profit_rate' => 30.00,  'duration_days' => 3,  'min_amount' => 5000.00,    'max_amount' => 5000.00],
-        ['id' => 2, 'name' => 'Bronze Plan',   'profit_rate' => 40.00,  'duration_days' => 7,  'min_amount' => 10000.00,   'max_amount' => 10000.00],
-        ['id' => 3, 'name' => 'Silver Plan',   'profit_rate' => 50.00,  'duration_days' => 10, 'min_amount' => 15000.00,   'max_amount' => 15000.00],
-        ['id' => 4, 'name' => 'Gold Plan',     'profit_rate' => 60.00,  'duration_days' => 10, 'min_amount' => 20000.00,   'max_amount' => 20000.00],
-        ['id' => 5, 'name' => 'Platinum Plan', 'profit_rate' => 70.00,  'duration_days' => 15, 'min_amount' => 50000.00,   'max_amount' => 50000.00],
-        ['id' => 6, 'name' => 'Starter',       'profit_rate' => 60.00,  'duration_days' => 10, 'min_amount' => 100000.00,  'max_amount' => 100000.00],
-        ['id' => 7, 'name' => 'Bronze',        'profit_rate' => 80.00,  'duration_days' => 15, 'min_amount' => 200000.00,  'max_amount' => 200000.00],
-        ['id' => 8, 'name' => 'Silver',        'profit_rate' => 80.00,  'duration_days' => 20, 'min_amount' => 500000.00,  'max_amount' => 500000.00],
-        ['id' => 9, 'name' => 'Gold',          'profit_rate' => 100.00, 'duration_days' => 30, 'min_amount' => 1000000.00, 'max_amount' => 1000000.00]
-    ];
-    foreach ($default_plans as $dp) {
-        $check = $pdo->prepare('SELECT id FROM investment_plans WHERE id = ?');
-        $check->execute([$dp['id']]);
-        if (!$check->fetch()) {
-            $ins = $pdo->prepare('INSERT INTO investment_plans (id, name, profit_rate, duration_days, min_amount, max_amount) VALUES (?, ?, ?, ?, ?, ?)');
-            $ins->execute([$dp['id'], $dp['name'], $dp['profit_rate'], $dp['duration_days'], $dp['min_amount'], $dp['max_amount']]);
-        } else {
-            $upd = $pdo->prepare('UPDATE investment_plans SET name = ?, profit_rate = ?, duration_days = ?, min_amount = ?, max_amount = ? WHERE id = ?');
-            $upd->execute([$dp['name'], $dp['profit_rate'], $dp['duration_days'], $dp['min_amount'], $dp['max_amount'], $dp['id']]);
-        }
-    }
     $plans = $pdo->query('SELECT * FROM investment_plans ORDER BY id ASC LIMIT 9')->fetchAll();
 } catch (Throwable $e) {
     $plans = [];
@@ -69,16 +50,27 @@ try {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NOVATOLO - Digital Investment Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#173c38">
+    <title>NOVATOLO | Investment Account</title>
 
-    <meta name="description" content="Join NOVATOLO investment platform and start growing your portfolio today.">
+    <meta name="description" content="Explore NOVATOLO investment plans, account services, and support. Review plan terms and risks before investing.">
+    <link rel="canonical" href="<?= e($site_url . '/index.php') ?>">
+    <link rel="icon" href="brand-icon.svg" type="image/svg+xml">
+    <link rel="manifest" href="site.webmanifest">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="NOVATOLO Platform">
-    <meta property="og:description" content="Join using my referral link and start investing with NOVATOLO today!">
-    <meta property="og:image" content="https://rwaandainvestment.freedev.app/logo.jpg">
+    <meta property="og:site_name" content="NOVATOLO">
+    <meta property="og:title" content="NOVATOLO | Investment Account">
+    <meta property="og:description" content="Explore NOVATOLO investment plans and account services. Review plan terms and risks before investing.">
+    <meta property="og:url" content="<?= e($site_url . '/index.php' . $ref_query) ?>">
+    <meta property="og:image" content="<?= e($site_url . '/logo.jpg') ?>">
+    <meta property="og:image:alt" content="NOVATOLO Digital Platform">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="NOVATOLO | Investment Account">
+    <meta name="twitter:description" content="Explore NOVATOLO investment plans and account services.">
+    <meta name="twitter:image" content="<?= e($site_url . '/logo.jpg') ?>">
 
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
@@ -232,12 +224,13 @@ try {
         .btn-whatsapp:hover { background: #1da851; }
         .footer-bottom { text-align: center; border-top: 1px solid var(--card-border); margin-top: 24px; padding-top: 16px; font-size: 11px; color: var(--text-muted); }
     </style>
+    <link rel="stylesheet" href="brand.css">
 </head>
 <body>
 
 <header class="navbar">
     <a href="index.php<?= $ref_query ?>" class="brand-logo">
-        <div class="logo-icon"><i data-lucide="trending-up" size="15"></i></div>
+        <div class="logo-icon"><img src="brand-icon.svg" alt="" width="22" height="22"></div>
         <span class="brand-name">NOVATOLO</span>
     </a>
 
@@ -247,6 +240,7 @@ try {
     </div>
 
     <div class="nav-right-auth">
+        <button type="button" class="btn-auth-login app-install" data-install-app><i data-lucide="download" size="13"></i> Install app</button>
         <a href="login.php<?= $ref_query ?>" class="btn-auth-login"><i data-lucide="log-in" size="13"></i> Sign In</a>
         <a href="register.php<?= $ref_query ?>" class="btn-auth-signup"><i data-lucide="user-plus" size="13"></i> Sign Up</a>
     </div>
@@ -254,12 +248,14 @@ try {
 
 <div class="container">
     <div class="hero-banner">
-        <h1>NOVATOLO DIGITAL PLATFORM</h1>
-        <p>Explore our top high-yield investment options and grow your financial portfolio safely with automated daily interest.</p>
+        <p class="hero-kicker">NOVATOLO · INVESTMENT ACCOUNT</p>
+        <h1>Make your next financial decision with clarity.</h1>
+        <p>Review available plans, understand their terms, and manage your account in one place.</p>
+        <a class="hero-action" href="register.php<?= $ref_query ?>">Open an account <i data-lucide="arrow-up-right" size="16"></i></a>
     </div>
 
     <div class="section-title">
-        <i data-lucide="sparkles" size="18" color="#10B981"></i> Investment Plans
+        <i data-lucide="chart-no-axes-combined" size="18" color="#176b5d"></i> Available investment plans
     </div>
 
     <div class="plans-grid">
@@ -288,7 +284,7 @@ try {
                         <div class="limits-box">
                             <div class="limit-row"><span class="limit-label">Invest Amount</span><strong class="limit-val"><?= money($planAmount) ?></strong></div>
                             <div class="limit-row"><span class="limit-label">Daily Profit</span><strong class="limit-val green"><?= money($dailyProfit) ?> / day</strong></div>
-                            <div class="limit-row"><span class="limit-label">Total Return</span><strong class="limit-val"><?= money($totalReturn) ?></strong></div>
+                            <div class="limit-row"><span class="limit-label">Estimated total return</span><strong class="limit-val"><?= money($totalReturn) ?></strong></div>
                         </div>
                         <button class="btn-invest" onclick="promptLogin()"><i data-lucide="trending-up" size="14"></i> Invest Plan</button>
                     </div>
@@ -296,6 +292,7 @@ try {
             </article>
         <?php endforeach; ?>
     </div>
+    <p class="risk-note">Plan figures are estimates based on the terms shown. Investment outcomes are not guaranteed. Review the full terms and consider the risks before depositing.</p>
 </div>
 
 <div class="modal-overlay" id="authModal">
@@ -315,7 +312,7 @@ try {
     <div class="footer-container">
         <div class="footer-col">
             <div class="brand-logo" style="margin-bottom: 10px;">
-                <div class="logo-icon"><i data-lucide="trending-up" size="15"></i></div>
+                <div class="logo-icon"><img src="brand-icon.svg" alt="" width="22" height="22"></div>
                 <span class="brand-name">NOVATOLO</span>
             </div>
             <p>Empowering individuals with reliable and profitable digital investment strategies.</p>

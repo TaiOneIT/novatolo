@@ -25,9 +25,12 @@ if (isset($_SESSION['user_id'])) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>About Us - NOVATOLO</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#173c38">
+    <title>About NOVATOLO</title>
+    <link rel="icon" href="brand-icon.svg" type="image/svg+xml">
+    <link rel="manifest" href="site.webmanifest">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
@@ -151,12 +154,13 @@ if (isset($_SESSION['user_id'])) {
         .btn-whatsapp:hover { background: #1da851; }
         .footer-bottom { text-align: center; border-top: 1px solid var(--card-border); margin-top: 24px; padding-top: 16px; font-size: 11px; color: var(--text-muted); }
     </style>
+    <link rel="stylesheet" href="brand.css">
 </head>
 <body>
 
 <header class="navbar">
     <a href="index.php<?= $ref_query ?>" class="brand-logo">
-        <div class="logo-icon"><i data-lucide="trending-up" size="15"></i></div>
+        <div class="logo-icon"><img src="brand-icon.svg" alt="" width="22" height="22"></div>
         <span class="brand-name">NOVATOLO</span>
     </a>
 
@@ -174,16 +178,16 @@ if (isset($_SESSION['user_id'])) {
 <div class="container">
     <div class="about-card">
         <h1>About NOVATOLO</h1>
-        <p>NOVATOLO is a premier automated micro-investment platform created to help individuals grow their capital safely and transparently through tailored investment packages.</p>
+        <p>NOVATOLO provides account tools for reviewing investment plans, tracking account activity, and contacting support. Plan terms and account activity are shown in the platform for members to review.</p>
 
         <div class="feature-box">
             <h4><i data-lucide="shield-check" color="#10B981" size="18"></i> How Plans Work & Yield Interest</h4>
-            <p style="margin:0; font-size:12px;">Users select an investment tier starting from Starter to Platinum. The invested capital is pooled into vetted automated trading and local enterprise projects. Daily earnings are automatically computed and credited directly to your profit balance.</p>
+            <p style="margin:0; font-size:12px;">Each plan shows its rate, term, minimum amount, and estimated return. Once an investment is active, its status and maturity are tracked in your account. Displayed estimates are not a guarantee of future results.</p>
         </div>
 
         <div class="feature-box">
             <h4><i data-lucide="gift" color="#F59E0B" size="18"></i> Referral Income</h4>
-            <p style="margin:0; font-size:12px;">Earn an additional reward of 800 RWF whenever an invited user joins using your referral link and completes investments totaling 5,000 RWF or higher.</p>
+            <p style="margin:0; font-size:12px;">Referral rewards may be available when an invited member makes qualifying approved deposits. Check your account for the current reward status and applicable terms.</p>
         </div>
 
         <div style="margin-top:20px;">
@@ -207,10 +211,10 @@ if (isset($_SESSION['user_id'])) {
     <div class="footer-container">
         <div class="footer-col">
             <div class="brand-logo" style="margin-bottom: 10px;">
-                <div class="logo-icon"><i data-lucide="trending-up" size="15"></i></div>
+                <div class="logo-icon"><img src="brand-icon.svg" alt="" width="22" height="22"></div>
                 <span class="brand-name">NOVATOLO</span>
             </div>
-            <p>Empowering individuals with reliable and profitable digital investment strategies.</p>
+            <p>Account tools for reviewing investment plans, tracking activity, and contacting support.</p>
         </div>
 
         <div class="footer-col">
@@ -235,7 +239,7 @@ if (isset($_SESSION['user_id'])) {
                     <span>support@novatolo.com</span>
                 </li>
             </ul>
-            <a href="https://wa.me/447480275490?text=Hello%20NOVATOLO%20Support," target="_blank" class="btn-whatsapp">
+            <a href="https://wa.me/447480275490?text=Hello%20NOVATOLO%20Support," target="_blank" rel="noopener noreferrer" class="btn-whatsapp">
                 <i data-lucide="message-circle" size="15"></i> Chat on WhatsApp
             </a>
         </div>
@@ -247,5 +251,6 @@ if (isset($_SESSION['user_id'])) {
 </footer>
 
 <script>lucide.createIcons();</script>
+<script src="install.js" defer></script>
 </body>
 </html>

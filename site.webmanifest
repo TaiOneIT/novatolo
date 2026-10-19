@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "NOVATOLO",
+  "short_name": "NOVATOLO",
+  "description": "NOVATOLO investment account and member services",
+  "start_url": "./index.php",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f4f7f3",
+  "theme_color": "#173c38",
+  "icons": [
+    {
+      "src": "./brand-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

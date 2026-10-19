@@ -14,18 +14,6 @@ if (!empty($_GET['ref'])) {
 $ref_code_param = $_SESSION['ref_code'] ?? '';
 $ref_query = !empty($ref_code_param) ? '?ref=' . rawurlencode($ref_code_param) : '';
 
-// Auto-seed Admin Account
-$admin_phone = '0782008066';
-$admin_pass  = 'Mukarugira123@';
-
-$stmt = $pdo->prepare("SELECT id FROM users WHERE phone = ?");
-$stmt->execute([$admin_phone]);
-if (!$stmt->fetch()) {
-    $hash = password_hash($admin_pass, PASSWORD_BCRYPT);
-    $stmt = $pdo->prepare("INSERT INTO users (full_name, phone, password, balance, is_admin) VALUES (?, ?, ?, 0.00, 1)");
-    $stmt->execute(['System Admin', $admin_phone, $hash]);
-}
-
 $error = '';
 $success = '';
 
@@ -34,7 +22,6 @@ if (isset($_GET['registered']) && $_GET['registered'] == 1) {
 }
 
 $fill_phone = $_GET['phone'] ?? '';
-$fill_pass  = $_GET['pass'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $phone    = trim($_POST['phone']);
@@ -68,9 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="rw">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kwinjira - NOVATOLO LTD</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#173c38">
+    <title>Sign in | NOVATOLO</title>
+    <link rel="icon" href="brand-icon.svg" type="image/svg+xml">
+    <link rel="manifest" href="site.webmanifest">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -114,12 +104,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .alert-success { background-color: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; font-size: 12px; padding: 12px; border-radius: 10px; margin-bottom: 18px; text-align: center; font-weight: 700; }
         .alert-error { background-color: #FEF2F2; border: 1px solid #FECDD3; color: #B91C1C; font-size: 12px; padding: 12px; border-radius: 10px; margin-bottom: 18px; text-align: center; font-weight: 700; }
     </style>
+    <link rel="stylesheet" href="brand.css">
 </head>
 <body>
 
 <header class="navbar">
     <a href="index.php<?= $ref_query ?>" class="brand-logo">
-        <div class="logo-icon"><i data-lucide="trending-up" size="18"></i></div>
+        <div class="logo-icon"><img src="brand-icon.svg" alt="" width="26" height="26"></div>
         <span>NOVATOLO</span>
     </a>
     <a href="index.php<?= $ref_query ?>" class="btn-more-info">
@@ -138,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- NOVATOLO LTD Logo Header -->
         <div class="card-brand-header">
             <div class="logo-icon" style="width: 48px; height: 48px; border-radius: 14px;">
-                <i data-lucide="trending-up" size="26"></i>
+                <img src="brand-icon.svg" alt="" width="34" height="34">
             </div>
             <span style="font-size: 22px; font-weight: 800; margin-top: 6px;">NOVATOLO LTD</span>
             <span class="brand-subtitle">Digital Growth Platform</span>
@@ -160,7 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="form-group">
                 <label>Ijambo ry'Ibanga (Password)</label>
                 <div class="password-wrapper">
-                    <input type="text" id="passwordInput" name="password" value="<?= htmlspecialchars($fill_pass) ?>" placeholder="Andika ijambo ry'ibanga" required>
+                    <input type="password" id="passwordInput" name="password" autocomplete="current-password" placeholder="Andika ijambo ry'ibanga" required>
                     <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('passwordInput', this)">
                         <i data-lucide="eye" size="18"></i>
                     </button>
@@ -186,5 +177,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         lucide.createIcons();
     }
 </script>
+<script src="install.js" defer></script>
 </body>
 </html>

@@ -50,11 +50,10 @@ try {
         id INT AUTO_INCREMENT PRIMARY KEY,
         inviter_id INT NOT NULL,
         invited_user_id INT NOT NULL,
-        tier_level INT NOT NULL DEFAULT 1,
         amount DECIMAL(14,2) NOT NULL DEFAULT 800.00,
         qualifying_transaction_id INT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE KEY unique_user_tier (invited_user_id, tier_level)
+        UNIQUE KEY invited_user_id (invited_user_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 } catch (Throwable $e) {}
 
@@ -171,7 +170,7 @@ try {
     if ($pdo->inTransaction()) $pdo->rollBack();
 }
 
-/* Dynamic Tiered Referral Rewards */
+/* One referral reward per invited user, matching the existing SQL schema. */
 try {
     $stmt = $pdo->prepare("SELECT u.id AS invited_user_id, SUM(t.amount) AS total_approved_deposit, MAX(t.id) AS qualifying_transaction_id
         FROM users u
@@ -186,27 +185,17 @@ try {
         $totDep = (float)$ref['total_approved_deposit'];
         $qTxId = $ref['qualifying_transaction_id'];
 
-        $tiersToAward = [];
-        if ($totDep >= 30000) {
-            $tiersToAward = [1 => 800, 2 => 1200, 3 => 2000, 4 => 3000];
-        } elseif ($totDep >= 20000) {
-            $tiersToAward = [1 => 800, 2 => 1200, 3 => 2000];
-        } elseif ($totDep >= 10000) {
-            $tiersToAward = [1 => 800, 2 => 1200];
-        } elseif ($totDep >= 5000) {
-            $tiersToAward = [1 => 800];
-        }
-
-        foreach ($tiersToAward as $tierLevel => $rewardAmount) {
-            $chk = $pdo->prepare("SELECT id FROM referral_reward_awards WHERE invited_user_id = ? AND tier_level = ? LIMIT 1");
-            $chk->execute([$invitedId, $tierLevel]);
+        if ($totDep >= 5000) {
+            $chk = $pdo->prepare("SELECT id FROM referral_reward_awards WHERE invited_user_id = ? LIMIT 1");
+            $chk->execute([$invitedId]);
             if (!$chk->fetch()) {
                 $pdo->beginTransaction();
-                $chk = $pdo->prepare("SELECT id FROM referral_reward_awards WHERE invited_user_id = ? AND tier_level = ? FOR UPDATE");
-                $chk->execute([$invitedId, $tierLevel]);
+                $chk = $pdo->prepare("SELECT id FROM referral_reward_awards WHERE invited_user_id = ? FOR UPDATE");
+                $chk->execute([$invitedId]);
                 if (!$chk->fetch()) {
-                    $ins = $pdo->prepare("INSERT INTO referral_reward_awards (inviter_id, invited_user_id, tier_level, amount, qualifying_transaction_id) VALUES (?, ?, ?, ?, ?)");
-                    $ins->execute([$user_id, $invitedId, $tierLevel, $rewardAmount, $qTxId]);
+                    $rewardAmount = 800;
+                    $ins = $pdo->prepare("INSERT INTO referral_reward_awards (inviter_id, invited_user_id, amount, qualifying_transaction_id) VALUES (?, ?, ?, ?)");
+                    $ins->execute([$user_id, $invitedId, $rewardAmount, $qTxId]);
                     $upd = $pdo->prepare("UPDATE users SET profit_balance = profit_balance + ? WHERE id = ?");
                     $upd->execute([$rewardAmount, $user_id]);
                 }
@@ -531,15 +520,23 @@ $inactiveInvited = array_values(array_filter($invitedMembers, fn($m) => (float)$
 $depositBalance = (float)$user['balance'];
 $earningBalance = (float)$user['profit_balance'];
 $totalBalance = $depositBalance + $earningBalance;
+$welcomeBonusAwarded = false;
+try {
+    $bonusStmt = $pdo->prepare('SELECT id FROM welcome_bonus_awards WHERE user_id = ? LIMIT 1');
+    $bonusStmt->execute([$user_id]);
+    $welcomeBonusAwarded = (bool)$bonusStmt->fetch();
+} catch (Throwable $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#071B2D">
 <title>Dashboard - NOVATOLO</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="brand-icon.svg" type="image/svg+xml">
+<link rel="manifest" href="site.webmanifest">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
 :root{
@@ -658,10 +655,11 @@ body{padding-bottom:96px}button,input,textarea{font:inherit}button{cursor:pointe
 @media(max-width:900px){.top-links{display:none}.mobile-nav-strip{display:flex;position:sticky;top:64px;z-index:80;overflow-x:auto;gap:5px;padding:7px 10px;background:rgba(248,250,252,.96);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}.mobile-nav-strip button{white-space:nowrap;border:1px solid #dbe4ee;background:#fff;color:#64748b;border-radius:999px;padding:7px 10px;font-size:8px;font-weight:800}.mobile-nav-strip button.active{background:#eff6ff;border-color:#93c5fd;color:#1d4ed8}.plans-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:680px){.container{padding:13px 11px 20px}.plans-grid{grid-template-columns:1fr;gap:12px}.info-grid{grid-template-columns:1fr}}
 </style>
+<link rel="stylesheet" href="brand.css">
 </head>
 <body>
 <header class="topbar">
-    <a class="brand" href="dashboard.php?tab=home"><span class="brand-mark"><i data-lucide="trending-up" size="18"></i></span>NOVATOLO</a>
+    <a class="brand" href="dashboard.php?tab=home"><span class="brand-mark"><img src="brand-icon.svg" alt="" width="25" height="25"></span>NOVATOLO</a>
     <nav class="top-links">
         <button class="top-link <?= $tab==='home'?'active':'' ?>" data-tab="home"><i data-lucide="home" size="14"></i>Home</button>
         <button class="top-link <?= $tab==='plans'?'active':'' ?>" data-tab="plans"><i data-lucide="layers-3" size="14"></i>Plans</button>
@@ -673,7 +671,10 @@ body{padding-bottom:96px}button,input,textarea{font:inherit}button{cursor:pointe
             <?php if ($unreadAdminMsgs > 0): ?><span class="chat-attention-badge">+</span><?php endif; ?>
         </button>
     </nav>
-    <a class="logout" href="login.php"><i data-lucide="log-out" size="13"></i> Logout</a>
+    <div style="display:flex; align-items:center; gap:7px;">
+        <button class="logout app-install" type="button" data-install-app title="Install NOVATOLO"><i data-lucide="download" size="13"></i><span>Install</span></button>
+        <a class="logout" href="logout.php"><i data-lucide="log-out" size="13"></i> Logout</a>
+    </div>
 </header>
 
 <main class="container">
@@ -696,7 +697,7 @@ body{padding-bottom:96px}button,input,textarea{font:inherit}button{cursor:pointe
         <div class="balance-card total"><div class="b-label">Total Balance</div><div class="b-value"><?= money($totalBalance) ?></div><div class="b-note">Deposit + earning wallets</div></div>
         <div class="balance-card"><div class="b-label">Deposit Balance</div><div class="b-value"><?= money($depositBalance) ?></div><div class="b-note">Available for investments</div></div>
         <div class="balance-card"><div class="b-label">Earning Balance</div><div class="b-value green"><?= money($earningBalance) ?></div><div class="b-note">Withdrawable & investable</div></div>
-        <div class="balance-card"><div class="b-label">Welcome Bonus</div><div class="b-value">1,000 RWF</div><div class="b-note">Unlocked at 5,000+ RWF deposit</div></div>
+        <div class="balance-card"><div class="b-label">Welcome Bonus</div><div class="b-value"><?= $welcomeBonusAwarded ? '1,000 RWF' : 'Not earned' ?></div><div class="b-note">Awarded after a qualifying approved deposit</div></div>
     </div>
 
     <div class="actions">
@@ -708,7 +709,7 @@ body{padding-bottom:96px}button,input,textarea{font:inherit}button{cursor:pointe
     <div class="info-grid">
         <div class="info-card"><div class="info-icon"><i data-lucide="smartphone" size="16"></i></div><h3>Mobile Money Deposits</h3><p>Make your Mobile Money payment, then submit the exact amount so the deposit can be verified and credited to your account.</p></div>
         <div class="info-card"><div class="info-icon"><i data-lucide="shield-check" size="16"></i></div><h3>Clear Financial Control</h3><p>Deposits, active investments, earned returns, and cash withdrawals are tracked in realtime transparently.</p></div>
-        <div class="info-card"><div class="info-icon"><i data-lucide="timer" size="16"></i></div><h3>Automated Investment Growth</h3><p>Select a verified growth plan, monitor countdown timers, and watch your capital and earnings automatically settle.</p></div>
+        <div class="info-card"><div class="info-icon"><i data-lucide="timer" size="16"></i></div><h3>Investment tracking</h3><p>Review your plan terms, status, and maturity estimate. Returns shown in plan details are estimates and are not guaranteed.</p></div>
     </div>
 
     <div class="contact">
@@ -764,6 +765,7 @@ body{padding-bottom:96px}button,input,textarea{font:inherit}button{cursor:pointe
         </article>
     <?php endforeach; ?>
     </div>
+    <p class="risk-note">Plan figures are estimates based on the terms shown. Investment outcomes are not guaranteed. Review the full terms and consider the risks before depositing.</p>
 </section>
 
 <!-- INVESTMENTS PAGE -->
@@ -843,7 +845,7 @@ body{padding-bottom:96px}button,input,textarea{font:inherit}button{cursor:pointe
 <section id="page-invited" class="page <?= $tab === 'invited' ? 'active' : '' ?>">
     <div style="background:#071b2d; color:#fff; border-radius:18px; padding:16px; margin-bottom:12px;">
         <h3>Invite Friends & Earn Rewards</h3>
-        <p style="font-size:10px; color:#cbd5e1; margin-top:4px;">Earn up to 3,000 RWF per referral based on their deposit level!</p>
+        <p style="font-size:10px; color:#cbd5e1; margin-top:4px;">Receive one 800 RWF reward when a referred member reaches 5,000 RWF in approved deposits.</p>
         <div style="display:flex; gap:6px; margin-top:10px;">
             <input type="text" id="refUrl" value="<?= e($ref_link) ?>" readonly style="flex:1; padding:8px; border-radius:8px; border:none; font-size:10px;">
             <button onclick="copyRef()" style="background:#2563eb; color:#fff; border:none; padding:0 12px; border-radius:8px; font-weight:800; font-size:10px;">Copy</button>
@@ -1271,5 +1273,6 @@ body{padding-bottom:96px}button,input,textarea{font:inherit}button{cursor:pointe
         if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
     });
 </script>
+<script src="install.js" defer></script>
 </body>
 </html>
