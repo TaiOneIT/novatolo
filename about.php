@@ -14,10 +14,22 @@ if (!empty($_GET['ref'])) {
 
 $ref_code_param = $_SESSION['ref_code'] ?? '';
 $ref_query = !empty($ref_code_param) ? '?ref=' . rawurlencode($ref_code_param) : '';
+$plan_images = require 'plan_images.php';
+$plans = $pdo->query('SELECT * FROM investment_plans ORDER BY id ASC')->fetchAll();
 $planOverview = $pdo->query('SELECT COUNT(*) AS plan_count, MIN(min_amount) AS starting_amount, MIN(duration_days) AS shortest_duration, MAX(duration_days) AS longest_duration, MIN(profit_rate) AS lowest_rate, MAX(profit_rate) AS highest_rate FROM investment_plans')->fetch();
 $exampleWithdrawal = MINIMUM_WITHDRAWAL_RWF;
 $exampleWithdrawalFee = round($exampleWithdrawal * WITHDRAWAL_FEE_PERCENT / 100);
 $exampleWithdrawalPayout = $exampleWithdrawal - $exampleWithdrawalFee;
+
+function e($value): string
+{
+    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+}
+
+function money($amount): string
+{
+    return number_format((float)$amount, 0) . ' RWF';
+}
 
 $user = null;
 if (isset($_SESSION['user_id'])) {
@@ -201,6 +213,17 @@ if (isset($_SESSION['user_id'])) {
             <div><strong><?= number_format((float)$planOverview['lowest_rate'], 0) ?>–<?= number_format((float)$planOverview['highest_rate'], 0) ?>%</strong><span>published plan rates</span></div>
             <div><strong><?= (int)$planOverview['shortest_duration'] ?>–<?= (int)$planOverview['longest_duration'] ?> days</strong><span>plan durations</span></div>
         </div>
+
+        <section class="about-plan-list" aria-labelledby="about-plan-heading">
+            <div class="about-plan-heading">
+                <div>
+                    <span class="about-eyebrow">Published tiers</span>
+                    <h2 id="about-plan-heading">Investment plan terms</h2>
+                </div>
+                <span><?= count($plans) ?> plans</span>
+            </div>
+            <?php $planTableMode = 'about'; require 'plan_table.php'; ?>
+        </section>
 
         <div class="about-details">
             <div class="about-detail">

@@ -722,50 +722,7 @@ body{padding-bottom:96px}button,input,textarea{font:inherit}button{cursor:pointe
         <div><h2>Investment plans</h2><span>Plans start at <?= $startingPlanAmount !== null ? money($startingPlanAmount) : '—' ?> · review each term</span></div>
         <span class="plan-count"><?= count($plans) ?> plans</span>
     </div>
-    <div class="plans-grid">
-    <?php 
-    foreach ($plans as $index => $plan): 
-        $pId = (int)$plan['id'];
-        $imgFile = $plan_images[$pId] ?? 'florian-media-dock-2898497.jpg';
-        $planCategory = $pId <= 8 ? 'Phones' : ($pId <= 16 ? 'Watches' : 'Computers');
-        $planAmount = (float)$plan['min_amount'];
-        $profitRate = (float)$plan['profit_rate'];
-        $durationDays = (int)$plan['duration_days'];
-        $totalProfit = $planAmount * ($profitRate / 100);
-        $totalReturn = $planAmount + $totalProfit;
-        $dailyProfit = $totalProfit / max(1, $durationDays);
-        
-        $isFirst3 = $index < 3;
-        $userInvestedCount = $userInvestmentsByPlan[$plan['id']] ?? 0;
-        $isLimitReached = $isFirst3 && $userInvestedCount >= 1;
-    ?>
-        <article class="plan">
-            <div>
-                <div class="plan-top" style="background-image: url('<?= $imgFile ?>');">
-                    <div class="plan-top-overlay"></div>
-                    <span class="plan-category"><?= e($planCategory) ?></span>
-                    <span class="plan-pill"><?= e($plan['name']) ?></span>
-                </div>
-                <div class="plan-body">
-                    <div class="rate-row">
-                        <div class="rate-badge"><div class="pct-box">%</div><div><div class="rate-label">Profit Rate</div><div class="rate-val"><?= e($plan['profit_rate']) ?>%</div></div></div>
-                        <div style="text-align:right"><div class="rate-label">Duration</div><div class="duration-val"><i data-lucide="clock" size="14"></i><span><?= $durationDays ?> Days</span></div></div>
-                    </div>
-                    <div class="limits-box">
-                        <div class="limit-row"><span class="limit-label">Invest Amount</span><strong class="limit-val"><?= money($planAmount) ?></strong></div>
-                        <div class="limit-row"><span class="limit-label">Daily Profit</span><strong class="limit-val green"><?= money($dailyProfit) ?> / day</strong></div>
-                        <div class="limit-row"><span class="limit-label">Total Return</span><strong class="limit-val"><?= money($totalReturn) ?></strong></div>
-                    </div>
-                    <?php if ($isLimitReached): ?>
-                        <button class="btn-invest" disabled><i data-lucide="check-circle" size="15"></i> Plan Already Used</button>
-                    <?php else: ?>
-                        <button class="btn-invest" onclick="openInvestModal(<?= (int)$plan['id'] ?>, '<?= e(addslashes($plan['name'])) ?>', <?= $planAmount ?>, <?= $profitRate ?>, <?= $durationDays ?>, <?= $totalReturn ?>)"><i data-lucide="zap" size="15"></i> Invest Now</button>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </article>
-    <?php endforeach; ?>
-    </div>
+    <?php $planTableMode = 'dashboard'; require 'plan_table.php'; ?>
     <p class="risk-note">Plan figures are estimates based on the terms shown. Investment outcomes are not guaranteed. Review the full terms and consider the risks before depositing.</p>
 </section>
 

@@ -252,42 +252,7 @@ $startingPlanAmount = $plans ? min(array_map(static fn($plan) => (float)$plan['m
         <span class="plan-count"><?= count($plans) ?> plans</span>
     </div>
 
-    <div class="plans-grid">
-        <?php 
-        foreach ($plans as $plan): 
-            $pId = (int)$plan['id'];
-            $imgFile = $plan_images[$pId] ?? 'florian-media-dock-2898497.jpg';
-            $planCategory = $pId <= 8 ? 'Phones' : ($pId <= 16 ? 'Watches' : 'Computers');
-            $planAmount = (float)$plan['min_amount'];
-            $profitRate = (float)$plan['profit_rate'];
-            $durationDays = (int)$plan['duration_days'];
-            $totalProfit = $planAmount * ($profitRate / 100);
-            $totalReturn = $planAmount + $totalProfit;
-            $dailyProfit = $totalProfit / max(1, $durationDays);
-        ?>
-            <article class="plan">
-                <div>
-                    <div class="plan-top" style="background-image: url('<?= $imgFile ?>');">
-                        <div class="plan-top-overlay"></div>
-                        <span class="plan-category"><?= e($planCategory) ?></span>
-                        <span class="plan-pill"><?= e($plan['name']) ?></span>
-                    </div>
-                    <div class="plan-body">
-                        <div class="rate-row">
-                            <div class="rate-badge"><div class="pct-box">%</div><div><div class="rate-label">Profit Rate</div><div class="rate-val"><?= e($plan['profit_rate']) ?>%</div></div></div>
-                            <div style="text-align:right"><div class="rate-label">Duration</div><div class="duration-val"><i data-lucide="clock" size="13"></i><span><?= $durationDays ?> Days</span></div></div>
-                        </div>
-                        <div class="limits-box">
-                            <div class="limit-row"><span class="limit-label">Invest Amount</span><strong class="limit-val"><?= money($planAmount) ?></strong></div>
-                            <div class="limit-row"><span class="limit-label">Daily Profit</span><strong class="limit-val green"><?= money($dailyProfit) ?> / day</strong></div>
-                            <div class="limit-row"><span class="limit-label">Estimated total return</span><strong class="limit-val"><?= money($totalReturn) ?></strong></div>
-                        </div>
-                        <button class="btn-invest" onclick="promptLogin()"><i data-lucide="trending-up" size="14"></i> Invest Plan</button>
-                    </div>
-                </div>
-            </article>
-        <?php endforeach; ?>
-    </div>
+    <?php $planTableMode = 'public'; require 'plan_table.php'; ?>
     <p class="risk-note">Plan figures are estimates based on the terms shown. Investment outcomes are not guaranteed. Review the full terms and consider the risks before depositing.</p>
 </div>
 
